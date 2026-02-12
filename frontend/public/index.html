@@ -16,6 +16,8 @@
   <div class="nav" style="margin-bottom:15px;">
     <a href="index.html" style="margin-right:10px;">Home</a>
     <a href="plans.html" style="margin-right:10px;">Plans</a>
+    <a href="checkout.html" style="margin-right:10px;">Checkout</a>
+
   </div>
 
   <h1>Welcome to TM.com</h1>
@@ -38,12 +40,26 @@
   function login(){
     const email=document.getElementById('email').value;
     const pwd=document.getElementById('password').value;
-    api('/login','POST',{email,password:pwd}).then(r=>{document.getElementById('msg').innerText=JSON.stringify(r)});
+    api('/login','POST',{email,password:pwd}).then(r=>{
+      if(r.token){
+        localStorage.setItem('token', r.token);
+        document.getElementById('msg').innerText='Logged in';
+      } else {
+        document.getElementById('msg').innerText=JSON.stringify(r);
+      }
+    });
   }
   function register(){
     const email=document.getElementById('email').value;
     const pwd=document.getElementById('password').value;
-    api('/register','POST',{email,password:pwd}).then(r=>{document.getElementById('msg').innerText=JSON.stringify(r)});
+    api('/register','POST',{email,password:pwd}).then(r=>{
+      if(r.token){
+        localStorage.setItem('token', r.token);
+        document.getElementById('msg').innerText='Registered';
+      } else {
+        document.getElementById('msg').innerText=JSON.stringify(r);
+      }
+    });
   }
 </script>
 </body>

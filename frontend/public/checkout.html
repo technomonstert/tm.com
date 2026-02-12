@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TM.com – Checkout</title>
+  <style>
+    body {font-family: Arial, sans-serif; padding:20px; background:#f5f5f5;}
+    .card {background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); max-width:400px; margin:auto;}
+    #card-element {margin:20px 0;}
+    button {padding:10px 20px; background:#0a74da; color:#fff; border:none; border-radius:4px; cursor:pointer;}
+    button:disabled {background:#aaa;}
+  </style>
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <h2>Checkout</h2>
+  <div class="card">
+    <div id="planInfo"></div>
+    <div id="card-element"><!-- Stripe Card Element will be inserted here --></div>
+    <button id="payBtn" disabled>Pay</button>
+    <p id="msg"></p>
+  </div>
+  <script>
+    const stripe = Stripe('pk_test_51H0yLxK8J9xT1234567890abcdefghijklmnoPQRSTU'); // test public key
+    const elements = stripe.elements();
+    const card = elements.create('card');
+    card.mount('#card-element');
+
+    // Load selected plan ID from URL query param
+    const urlParams = new URLSearchParams(window.location.search);
+    const planId = urlParams.get('planId');
+    const token = localStorage.getItem('token');
+    if (!planId) { document.getElementById('msg').innerText='No plan selected.'; }
+    // Fetch plan details for display
+    fetch(`http://localhost:3001/api/plans`, { credentials:'include' })
+      .then(r=>r.json())
+      .then(plans=>{
+        const plan = plans.find(p=>p.id==planId);
+        if (!plan) { document.getElementById('msg').innerText='Plan not found.'; return; }
+        document.getElementById('planInfo').innerHTML = `<h3>${plan.name}</h3><p>Price: $${(plan.price_cents/100).toFixed(2)}/mo</p>`;
+        document.getElementById('payBtn').disabled = false;
+      })
+      .catch(e=>{ console.error(e); document.getElementById('msg').innerText='Failed to load plan.'; });
+
+    document.getElementById('payBtn').addEventListener('click', async () => {
+      document.getElementById('payBtn').disabled = true;
+      const resp = await fetch('http://localhost:3001/api/checkout', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({planId: parseInt(planId)})
+      });
+      const data = await resp.json();
+      if (!data.clientSecret) { document.getElementById('msg').innerText='Checkout error.'; return; }
+      const result = await stripe.confirmCardPayment(data.clientSecret, {payment_method:{card}});
+      if (result.error) {
+        document.getElementById('msg').innerText=result.error.message;
+      } else {
+        document.getElementById('msg').innerText='Payment succeeded!';
+      }
+    });
+  </script>
+</body>
+</html>
