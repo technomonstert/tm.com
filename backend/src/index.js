@@ -8,10 +8,18 @@ const jwt = require('jsonwebtoken');
 const db = require('./db');
 
 const app = express();
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
-}));
+// Global CORS headers for all responses (including errors)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  next();
+});
+
+// Handle preflight OPTIONS requests
+app.options('*', cors({ origin: 'http://localhost:3000', credentials: true }));
+
 app.use(helmet());
 app.use(express.json());
 
