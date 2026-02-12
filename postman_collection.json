@@ -1,0 +1,43 @@
+{
+  "info": {
+    "name": "TM.com API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{\"email\":\"test@example.com\",\"password\":\"Password123!\"}"},
+        "url": {"raw":"http://localhost:3001/register","protocol":"http","host":["localhost"],"port":"3001","path":["register"]}
+      },
+      "response": []
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{\"email\":\"test@example.com\",\"password\":\"Password123!\"}"},
+        "url": {"raw":"http://localhost:3001/login","protocol":"http","host":["localhost"],"port":"3001","path":["login"]}
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TM.com – Telecom Portal</title>
+  <style>
+    body {font-family: Arial, sans-serif; text-align:center; margin-top:50px;}
+    .logo {max-width:150px;}
+    .form {display:inline-block; margin-top:20px;}
+    input {display:block; margin:10px auto; padding:8px; width:200px;}
+    button {padding:10px 20px;}
+  </style>
+</head>
+<body>
+  <img src="logo.jpg" alt="TM.com Logo" class="logo" />
+  <h1>Welcome to TM.com</h1>
+  <div class="form">
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+    <button onclick="register()">Register</button>
+    <p id="msg"></p>
+  </div>
+<script>
+  const api = (path, method='GET', body) => {
+    return fetch(`http://localhost:3001${path}`, {
+      method,
+      headers: {'Content-Type':'application/json'},
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: 'include'
+    }).then(r=>r.json());
+  };
+  function login(){
+    const email=document.getElementById('email').value;
+    const pwd=document.getElementById('password').value;
+    api('/login','POST',{email,password:pwd}).then(r=>{document.getElementById('msg').innerText=JSON.stringify(r)});
+  }
+  function register(){
+    const email=document.getElementById('email').value;
+    const pwd=document.getElementById('password').value;
+    api('/register','POST',{email,password:pwd}).then(r=>{document.getElementById('msg').innerText=JSON.stringify(r)});
+  }
+</script>
+</body>
+</html>
