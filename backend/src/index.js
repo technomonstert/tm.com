@@ -22,7 +22,7 @@ const authLimiter = rateLimit({
   message: { error: 'Too many attempts, try again later.' }
 });
 
-// In‑memory user store removed – we now use PostgreSQL users table
+// Placeholder removed – DB‑backed users will be used
 let users = [];
 
 
@@ -31,26 +31,40 @@ app.get('/health', (req, res) => res.json({ status: 'OK' }));
 app.post('/register', authLimiter, async (req, res) => {
   const { email, password, firstName, lastName } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
-  const exists = users.find(u => u.email === email);
-  if (exists) return res.status(409).json({ error: 'User exists' });
-  const salt = await bcrypt.genSalt(12);
-  const hash = await bcrypt.hash(password, salt);
-  const newUser = { id: users.length + 1, email, passwordHash: hash, firstName, lastName };
-  users.push(newUser);
-  const token = jwt.sign({ sub: newUser.id, email }, process.env.JWT_SECRET, { expiresIn: '15m' });
-  const refresh = jwt.sign({ sub: newUser.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, refresh });
+  try {
+    const existRes = await db.query('SELECT id FROM users WHERE email=$1', [email]);
+    if (existRes.rows.length) return res.status(409).json({ error: 'User exists' });
+    const salt = await bcrypt.genSalt(12);
+    const hash = await bcrypt.hash(password, salt);
+    const insertRes = await db.query(
+      'INSERT INTO users (email, password_hash, first_name, last_name) VALUES ($1,$2,$3,$4) RETURNING id',
+      [email, hash, firstName, lastName]
+    );
+    const userId = insertRes.rows[0].id;
+    const token = jwt.sign({ sub: userId, email }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const refresh = jwt.sign({ sub: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, refresh });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Registration failed' });
+  }
 });
 
 app.post('/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
-  const user = users.find(u => u.email === email);
-  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-  const token = jwt.sign({ sub: user.id, email }, process.env.JWT_SECRET, { expiresIn: '15m' });
-  const refresh = jwt.sign({ sub: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, refresh });
+  try {
+    const userRes = await db.query('SELECT id, password_hash FROM users WHERE email=$1', [email]);
+    if (userRes.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+    const user = userRes.rows[0];
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+    const token = jwt.sign({ sub: user.id, email }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const refresh = jwt.sign({ sub: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, refresh });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Login failed' });
+  }
 });
 
 // Ensure required tables exist
