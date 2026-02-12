@@ -106,7 +106,6 @@ app.post('/login', authLimiter, async (req, res) => {
 app.use(express.static('public'));
 
 // ---------- Additional API routes ----------
-const db = require('./db');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // Helper: verify JWT and attach user payload
